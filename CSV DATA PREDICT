@@ -1,1 +1,76 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+from sklearn.preprocessing import MinMaxScaler
+
+# Upload CSV (Google Colab)
+from google.colab import files
+uploaded = files.upload()
+
+# Load CSV
+df = pd.read_csv("harsh.csv")
+
+# Data select
+data = df['Index'].values
+
+# Normalize
+scaler = MinMaxScaler()
+data = scaler.fit_transform(data.reshape(-1, 1))
+
+# Create sequences
+x = []
+y = []
+
+for i in range(len(data) - 3):
+    x.append(data[i:i+3])
+    y.append(data[i+3])
+
+x = np.array(x)
+y = np.array(y)
+
+# Train Test Split
+split = int(0.8 * len(x))
+
+x_train = x[:split]
+x_test = x[split:]
+
+y_train = y[:split]
+y_test = y[split:]
+
+# Model
+model = Sequential()
+
+model.add(
+    LSTM(
+        50,
+        activation='relu',
+        input_shape=(3, 1)
+    )
+)
+
+model.add(Dense(1))
+
+model.compile(
+    optimizer='adam',
+    loss='mse'
+)
+
+# Train
+model.fit(
+    x_train,
+    y_train,
+    epochs=350,
+    verbose=1
+)
+
+# Predict
+pred = model.predict(x_test)
+
+# Convert back to original scale
+pred = scaler.inverse_transform(pred)
+
+print("Prediction:")
+print(pred)
